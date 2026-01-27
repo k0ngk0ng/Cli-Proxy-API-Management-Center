@@ -23,6 +23,7 @@ interface RequestLogsProps {
   loading: boolean;
   providerMap: Record<string, string>;
   providerTypeMap: Record<string, string>;
+  authIndexMap: Record<string, { name: string; type: string }>;
   apiFilter: string;
 }
 
@@ -58,7 +59,7 @@ interface PrecomputedStats {
 // 虚拟滚动行高
 const ROW_HEIGHT = 40;
 
-export function RequestLogs({ data, loading: parentLoading, providerMap, providerTypeMap, apiFilter }: RequestLogsProps) {
+export function RequestLogs({ data, loading: parentLoading, providerMap, providerTypeMap, authIndexMap, apiFilter }: RequestLogsProps) {
   const { t } = useTranslation();
   const [filterApi, setFilterApi] = useState('');
   const [filterModel, setFilterModel] = useState('');
@@ -259,15 +260,45 @@ export function RequestLogs({ data, loading: parentLoading, providerMap, provide
     const entries: LogEntry[] = [];
     let idCounter = 0;
 
+    // 辅助函数：标准化 auth_index 值
+    const normalizeAuthIndex = (value: unknown): string | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value.toString();
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed || null;
+      }
+      return null;
+    };
+
     Object.entries(effectiveData.apis).forEach(([apiKey, apiData]) => {
       Object.entries(apiData.models).forEach(([modelName, modelData]) => {
         modelData.details.forEach((detail) => {
           const source = detail.source || 'unknown';
-          const { provider, masked } = getProviderDisplayParts(source, providerMap);
+          const authIndex = normalizeAuthIndex(detail.auth_index);
+
+          // 首先尝试通过 providerMap 获取显示信息
+          let { provider, masked } = getProviderDisplayParts(source, providerMap);
+          let providerType = providerTypeMap[source] || '';
+
+          // 如果 providerMap 中没有找到，且有 auth_index，尝试通过 authIndexMap 获取
+          if (!provider && authIndex && authIndexMap[authIndex]) {
+            const authInfo = authIndexMap[authIndex];
+            provider = authInfo.name;
+            providerType = providerType || authInfo.type;
+            // 对于通过 auth_index 找到的，masked 显示为认证文件名而不是 API KEY
+            masked = authInfo.name;
+          }
+
+          // 如果仍然没有 providerType，设置默认值
+          if (!providerType) {
+            providerType = '--';
+          }
+
           const displayName = provider ? `${provider} (${masked})` : masked;
           const timestampMs = detail.timestamp ? new Date(detail.timestamp).getTime() : 0;
-          // 获取提供商类型
-          const providerType = providerTypeMap[source] || '--';
+
           entries.push({
             id: `${idCounter++}`,
             timestamp: detail.timestamp,
@@ -290,7 +321,7 @@ export function RequestLogs({ data, loading: parentLoading, providerMap, provide
 
     // 按时间倒序排序
     return entries.sort((a, b) => b.timestampMs - a.timestampMs);
-  }, [effectiveData, providerMap, providerTypeMap]);
+  }, [effectiveData, providerMap, providerTypeMap, authIndexMap]);
 
   // 预计算所有条目的统计数据（一次性计算，避免渲染时重复计算）
   const precomputedStats = useMemo(() => {

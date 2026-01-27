@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useThemeStore } from '@/stores';
-import { usageApi, providersApi } from '@/services/api';
+import { usageApi, providersApi, authFilesApi } from '@/services/api';
 import { KpiCards } from '@/components/monitor/KpiCards';
 import { ModelDistributionChart } from '@/components/monitor/ModelDistributionChart';
 import { DailyTrendChart } from '@/components/monitor/DailyTrendChart';
@@ -85,6 +85,7 @@ export function MonitorPage() {
   const [providerMap, setProviderMap] = useState<Record<string, string>>({});
   const [providerModels, setProviderModels] = useState<Record<string, Set<string>>>({});
   const [providerTypeMap, setProviderTypeMap] = useState<Record<string, string>>({});
+  const [authIndexMap, setAuthIndexMap] = useState<Record<string, { name: string; type: string }>>({});
 
   // 加载渠道名称映射（支持所有提供商类型）
   const loadProviderMap = useCallback(async () => {
@@ -92,14 +93,16 @@ export function MonitorPage() {
       const map: Record<string, string> = {};
       const modelsMap: Record<string, Set<string>> = {};
       const typeMap: Record<string, string> = {};
+      const authIdxMap: Record<string, { name: string; type: string }> = {};
 
-      // 并行加载所有提供商配置
-      const [openaiProviders, geminiKeys, claudeConfigs, codexConfigs, vertexConfigs] = await Promise.all([
+      // 并行加载所有提供商配置和认证文件
+      const [openaiProviders, geminiKeys, claudeConfigs, codexConfigs, vertexConfigs, authFilesResponse] = await Promise.all([
         providersApi.getOpenAIProviders().catch(() => []),
         providersApi.getGeminiKeys().catch(() => []),
         providersApi.getClaudeConfigs().catch(() => []),
         providersApi.getCodexConfigs().catch(() => []),
         providersApi.getVertexConfigs().catch(() => []),
+        authFilesApi.list().catch(() => ({ files: [] })),
       ]);
 
       // 处理 OpenAI 兼容提供商
@@ -191,9 +194,48 @@ export function MonitorPage() {
         }
       });
 
+      // 处理认证文件（Auth Files）- 构建 auth_index 到文件信息的映射
+      const authFiles = authFilesResponse?.files || [];
+      authFiles.forEach((file) => {
+        // 获取 auth_index（兼容 auth_index 和 authIndex 两种字段名）
+        const rawAuthIndex = file['auth_index'] ?? file.authIndex;
+        let authIndexKey: string | null = null;
+        if (typeof rawAuthIndex === 'number' && Number.isFinite(rawAuthIndex)) {
+          authIndexKey = rawAuthIndex.toString();
+        } else if (typeof rawAuthIndex === 'string') {
+          const trimmed = rawAuthIndex.trim();
+          authIndexKey = trimmed || null;
+        }
+
+        if (authIndexKey) {
+          // 获取文件类型，用于显示
+          const fileType = (file.type || 'unknown').toString();
+          // 获取显示名称：优先使用 provider 字段，其次使用文件名（去掉 .json 后缀）
+          const displayName = file.provider?.trim() || file.name?.replace(/\.json$/i, '') || fileType;
+
+          authIdxMap[authIndexKey] = {
+            name: displayName,
+            type: fileType,
+          };
+
+          // 同时将文件名添加到 providerMap，以便通过文件名匹配
+          if (file.name) {
+            map[file.name] = displayName;
+            typeMap[file.name] = fileType;
+            // 也添加去掉 .json 后缀的版本
+            const nameWithoutExt = file.name.replace(/\.json$/i, '');
+            if (nameWithoutExt !== file.name) {
+              map[nameWithoutExt] = displayName;
+              typeMap[nameWithoutExt] = fileType;
+            }
+          }
+        }
+      });
+
       setProviderMap(map);
       setProviderModels(modelsMap);
       setProviderTypeMap(typeMap);
+      setAuthIndexMap(authIdxMap);
     } catch (err) {
       console.warn('Monitor: Failed to load provider map:', err);
     }
@@ -372,6 +414,7 @@ export function MonitorPage() {
         loading={loading}
         providerMap={providerMap}
         providerTypeMap={providerTypeMap}
+        authIndexMap={authIndexMap}
         apiFilter={apiFilter}
       />
     </div>
