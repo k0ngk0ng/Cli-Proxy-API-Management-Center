@@ -85,7 +85,7 @@ export function MonitorPage() {
   const [providerMap, setProviderMap] = useState<Record<string, string>>({});
   const [providerModels, setProviderModels] = useState<Record<string, Set<string>>>({});
   const [providerTypeMap, setProviderTypeMap] = useState<Record<string, string>>({});
-  const [authIndexMap, setAuthIndexMap] = useState<Record<string, { name: string; type: string }>>({});
+  const [authIndexMap, setAuthIndexMap] = useState<Record<string, { name: string; type: string; fileName: string }>>({});
 
   // 加载渠道名称映射（支持所有提供商类型）
   const loadProviderMap = useCallback(async () => {
@@ -93,7 +93,7 @@ export function MonitorPage() {
       const map: Record<string, string> = {};
       const modelsMap: Record<string, Set<string>> = {};
       const typeMap: Record<string, string> = {};
-      const authIdxMap: Record<string, { name: string; type: string }> = {};
+      const authIdxMap: Record<string, { name: string; type: string; fileName: string }> = {};
 
       // 并行加载所有提供商配置和认证文件
       const [openaiProviders, geminiKeys, claudeConfigs, codexConfigs, vertexConfigs, authFilesResponse] = await Promise.all([
@@ -210,12 +210,15 @@ export function MonitorPage() {
         if (authIndexKey) {
           // 获取文件类型，用于显示
           const fileType = (file.type || 'unknown').toString();
-          // 获取显示名称：优先使用 provider 字段，其次使用文件名（去掉 .json 后缀）
-          const displayName = file.provider?.trim() || file.name?.replace(/\.json$/i, '') || fileType;
+          // 获取文件名（去掉 .json 后缀）
+          const fileName = file.name?.replace(/\.json$/i, '') || '';
+          // 获取显示名称：优先使用 provider 字段，其次使用文件名
+          const displayName = file.provider?.trim() || fileName || fileType;
 
           authIdxMap[authIndexKey] = {
             name: displayName,
             type: fileType,
+            fileName: fileName,
           };
 
           // 同时将文件名添加到 providerMap，以便通过文件名匹配
