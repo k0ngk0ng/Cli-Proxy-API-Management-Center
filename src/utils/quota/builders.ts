@@ -9,7 +9,7 @@ import type {
   AntigravityModelsPayload,
   GeminiCliParsedBucket,
   GeminiCliQuotaBucketState,
-  KiroUsageLimitItem,
+  KiroUsageBreakdownItem,
   KiroQuotaItem,
 } from '@/types';
 import { ANTIGRAVITY_QUOTA_GROUPS, GEMINI_CLI_GROUP_LOOKUP } from './constants';
@@ -243,23 +243,46 @@ export function buildAntigravityQuotaGroups(
   return groups;
 }
 
-export function buildKiroQuotaItems(limits: KiroUsageLimitItem[]): KiroQuotaItem[] {
-  if (!limits || limits.length === 0) return [];
+export function buildKiroQuotaItems(
+  items: KiroUsageBreakdownItem[],
+  globalResetTime?: number | string | null
+): KiroQuotaItem[] {
+  if (!items || items.length === 0) return [];
 
-  return limits
+  return items
     .map((item, index) => {
       const resourceType = normalizeStringValue(item.resourceType ?? item.resource_type) ?? 'unknown';
-      const limit = normalizeNumberValue(item.limit);
-      const used = normalizeNumberValue(item.used);
-      const remaining = normalizeNumberValue(item.remaining);
-      const resetTime = normalizeStringValue(item.resetTime ?? item.reset_time) ?? undefined;
+      const displayName = normalizeStringValue(item.displayName ?? item.display_name);
+      const limit = normalizeNumberValue(
+        item.usageLimitWithPrecision ?? item.usage_limit_with_precision ??
+        item.usageLimit ?? item.usage_limit
+      );
+      const used = normalizeNumberValue(
+        item.currentUsageWithPrecision ?? item.current_usage_with_precision ??
+        item.currentUsage ?? item.current_usage
+      );
+      const unit = normalizeStringValue(item.unit) ?? undefined;
 
-      // Generate a human-readable label based on resourceType
-      const labelMap: Record<string, string> = {
-        AGENTIC_REQUEST: 'Agentic Request',
-        agentic_request: 'Agentic Request',
-      };
-      const label = labelMap[resourceType] ?? resourceType;
+      // Calculate remaining
+      let remaining: number | null = null;
+      if (limit !== null && used !== null) {
+        remaining = Math.max(0, limit - used);
+      }
+
+      // Parse reset time - prefer item-level, fallback to global
+      const itemResetTimestamp = normalizeNumberValue(item.nextDateReset ?? item.next_date_reset);
+      const globalResetTimestamp = normalizeNumberValue(globalResetTime);
+      const resetTimestamp = itemResetTimestamp ?? globalResetTimestamp;
+
+      let resetTime: string | undefined;
+      if (resetTimestamp !== null) {
+        // Convert Unix timestamp (seconds) to ISO string
+        const timestampMs = resetTimestamp > 1e12 ? resetTimestamp : resetTimestamp * 1000;
+        resetTime = new Date(timestampMs).toISOString();
+      }
+
+      // Generate label from displayName or resourceType
+      const label = displayName ?? resourceType;
 
       return {
         id: `kiro-${resourceType}-${index}`,
@@ -269,7 +292,8 @@ export function buildKiroQuotaItems(limits: KiroUsageLimitItem[]): KiroQuotaItem
         used,
         remaining,
         resetTime,
+        unit,
       };
     })
-    .filter((item) => item.limit !== null || item.used !== null || item.remaining !== null);
+    .filter((item) => item.limit !== null || item.used !== null);
 }

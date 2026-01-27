@@ -147,19 +147,52 @@ export interface CodexQuotaState {
 }
 
 // Kiro API payload types
-export interface KiroUsageLimitItem {
+export interface KiroUsageBreakdownItem {
   resourceType?: string;
   resource_type?: string;
-  limit?: number | string;
-  used?: number | string;
-  remaining?: number | string;
-  resetTime?: string;
-  reset_time?: string;
+  displayName?: string;
+  display_name?: string;
+  displayNamePlural?: string;
+  display_name_plural?: string;
+  usageLimit?: number | string;
+  usage_limit?: number | string;
+  usageLimitWithPrecision?: number | string;
+  usage_limit_with_precision?: number | string;
+  currentUsage?: number | string;
+  current_usage?: number | string;
+  currentUsageWithPrecision?: number | string;
+  current_usage_with_precision?: number | string;
+  nextDateReset?: number | string;
+  next_date_reset?: number | string;
+  unit?: string;
+  currency?: string;
+  overageCap?: number | string;
+  overage_cap?: number | string;
+  overageRate?: number | string;
+  overage_rate?: number | string;
+  currentOverages?: number | string;
+  current_overages?: number | string;
+}
+
+export interface KiroSubscriptionInfo {
+  type?: string;
+  subscriptionTitle?: string;
+  subscription_title?: string;
+  upgradeCapability?: string;
+  upgrade_capability?: string;
+  overageCapability?: string;
+  overage_capability?: string;
 }
 
 export interface KiroUsageLimitsPayload {
-  usageLimits?: KiroUsageLimitItem[];
-  usage_limits?: KiroUsageLimitItem[];
+  usageBreakdownList?: KiroUsageBreakdownItem[];
+  usage_breakdown_list?: KiroUsageBreakdownItem[];
+  subscriptionInfo?: KiroSubscriptionInfo;
+  subscription_info?: KiroSubscriptionInfo;
+  nextDateReset?: number | string;
+  next_date_reset?: number | string;
+  daysUntilReset?: number | string;
+  days_until_reset?: number | string;
 }
 
 export interface KiroQuotaItem {
@@ -170,11 +203,13 @@ export interface KiroQuotaItem {
   used: number | null;
   remaining: number | null;
   resetTime?: string;
+  unit?: string;
 }
 
 export interface KiroQuotaState {
   status: 'idle' | 'loading' | 'success' | 'error';
   items: KiroQuotaItem[];
+  subscriptionType?: string | null;
   error?: string;
   errorStatus?: number;
 }

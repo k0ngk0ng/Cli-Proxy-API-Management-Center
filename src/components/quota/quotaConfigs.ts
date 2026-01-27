@@ -677,8 +677,9 @@ const fetchKiroQuota = async (
 
       if (result.statusCode >= 200 && result.statusCode < 300) {
         const payload = parseKiroUsageLimitsPayload(result.body ?? result.bodyText);
-        const limits = payload?.usageLimits ?? payload?.usage_limits ?? [];
-        return buildKiroQuotaItems(limits);
+        const usageList = payload?.usageBreakdownList ?? payload?.usage_breakdown_list ?? [];
+        const globalResetTime = payload?.nextDateReset ?? payload?.next_date_reset;
+        return buildKiroQuotaItems(usageList, globalResetTime);
       }
 
       lastError = getApiCallErrorMessage(result);
