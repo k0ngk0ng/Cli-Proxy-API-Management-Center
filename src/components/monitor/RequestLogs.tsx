@@ -23,7 +23,7 @@ interface RequestLogsProps {
   loading: boolean;
   providerMap: Record<string, string>;
   providerTypeMap: Record<string, string>;
-  authIndexMap: Record<string, { name: string; type: string }>;
+  authIndexMap: Record<string, { name: string; type: string; fileName: string }>;
   apiFilter: string;
 }
 
@@ -287,8 +287,8 @@ export function RequestLogs({ data, loading: parentLoading, providerMap, provide
             const authInfo = authIndexMap[authIndex];
             provider = authInfo.name;
             providerType = providerType || authInfo.type;
-            // 对于通过 auth_index 找到的，masked 显示为认证文件名而不是 API KEY
-            masked = authInfo.name;
+            // 对于通过 auth_index 找到的，masked 显示为文件名
+            masked = authInfo.fileName || authInfo.name;
           }
 
           // 如果仍然没有 providerType，设置默认值
