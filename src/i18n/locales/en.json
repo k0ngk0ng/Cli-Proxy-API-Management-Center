@@ -376,6 +376,7 @@
     "filter_codex": "Codex",
     "filter_antigravity": "Antigravity",
     "filter_iflow": "iFlow",
+    "filter_kiro": "Kiro",
     "filter_vertex": "Vertex",
     "filter_empty": "Empty",
     "filter_unknown": "Other",
@@ -387,6 +388,7 @@
     "type_codex": "Codex",
     "type_antigravity": "Antigravity",
     "type_iflow": "iFlow",
+    "type_kiro": "Kiro",
     "type_vertex": "Vertex",
     "type_empty": "Empty",
     "type_unknown": "Other",
@@ -459,6 +461,19 @@
     "refresh_button": "Refresh Quota",
     "fetch_all": "Fetch All",
     "remaining_amount": "Remaining {{count}}"
+  },
+  "kiro_quota": {
+    "title": "Kiro Quota",
+    "empty_title": "No Kiro Auth Files",
+    "empty_desc": "Upload a Kiro credential to view remaining quota.",
+    "idle": "Not loaded. Click Refresh Button.",
+    "loading": "Loading quota...",
+    "load_failed": "Failed to load quota: {{message}}",
+    "missing_auth_index": "Auth file missing auth_index",
+    "empty_items": "No quota data available",
+    "refresh_button": "Refresh Quota",
+    "fetch_all": "Fetch All",
+    "usage_info": "{{used}}/{{limit}} ({{remaining}} left)"
   },
   "vertex_import": {
     "title": "Vertex JSON Login",

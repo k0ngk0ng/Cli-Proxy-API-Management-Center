@@ -2,7 +2,7 @@
  * Normalization and parsing functions for quota data.
  */
 
-import type { CodexUsagePayload, GeminiCliQuotaPayload } from '@/types';
+import type { CodexUsagePayload, GeminiCliQuotaPayload, KiroUsageLimitsPayload } from '@/types';
 
 export function normalizeAuthIndexValue(value: unknown): string | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -148,6 +148,23 @@ export function parseGeminiCliQuotaPayload(payload: unknown): GeminiCliQuotaPayl
   }
   if (typeof payload === 'object') {
     return payload as GeminiCliQuotaPayload;
+  }
+  return null;
+}
+
+export function parseKiroUsageLimitsPayload(payload: unknown): KiroUsageLimitsPayload | null {
+  if (payload === undefined || payload === null) return null;
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim();
+    if (!trimmed) return null;
+    try {
+      return JSON.parse(trimmed) as KiroUsageLimitsPayload;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof payload === 'object') {
+    return payload as KiroUsageLimitsPayload;
   }
   return null;
 }

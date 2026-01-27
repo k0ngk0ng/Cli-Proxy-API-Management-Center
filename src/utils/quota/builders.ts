@@ -9,9 +9,11 @@ import type {
   AntigravityModelsPayload,
   GeminiCliParsedBucket,
   GeminiCliQuotaBucketState,
+  KiroUsageLimitItem,
+  KiroQuotaItem,
 } from '@/types';
 import { ANTIGRAVITY_QUOTA_GROUPS, GEMINI_CLI_GROUP_LOOKUP } from './constants';
-import { normalizeQuotaFraction } from './parsers';
+import { normalizeQuotaFraction, normalizeNumberValue, normalizeStringValue } from './parsers';
 import { isIgnoredGeminiCliModel } from './validators';
 
 export function pickEarlierResetTime(current?: string, next?: string): string | undefined {
@@ -239,4 +241,35 @@ export function buildAntigravityQuotaGroups(
   }
 
   return groups;
+}
+
+export function buildKiroQuotaItems(limits: KiroUsageLimitItem[]): KiroQuotaItem[] {
+  if (!limits || limits.length === 0) return [];
+
+  return limits
+    .map((item, index) => {
+      const resourceType = normalizeStringValue(item.resourceType ?? item.resource_type) ?? 'unknown';
+      const limit = normalizeNumberValue(item.limit);
+      const used = normalizeNumberValue(item.used);
+      const remaining = normalizeNumberValue(item.remaining);
+      const resetTime = normalizeStringValue(item.resetTime ?? item.reset_time) ?? undefined;
+
+      // Generate a human-readable label based on resourceType
+      const labelMap: Record<string, string> = {
+        AGENTIC_REQUEST: 'Agentic Request',
+        agentic_request: 'Agentic Request',
+      };
+      const label = labelMap[resourceType] ?? resourceType;
+
+      return {
+        id: `kiro-${resourceType}-${index}`,
+        label,
+        resourceType,
+        limit,
+        used,
+        remaining,
+        resetTime,
+      };
+    })
+    .filter((item) => item.limit !== null || item.used !== null || item.remaining !== null);
 }

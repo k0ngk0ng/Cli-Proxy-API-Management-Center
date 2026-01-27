@@ -110,3 +110,53 @@ export function resolveGeminiCliProjectId(file: AuthFileItem): string | null {
 
   return null;
 }
+
+export function resolveKiroRegion(file: AuthFileItem): string | null {
+  const metadata =
+    file && typeof file.metadata === 'object' && file.metadata !== null
+      ? (file.metadata as Record<string, unknown>)
+      : null;
+  const attributes =
+    file && typeof file.attributes === 'object' && file.attributes !== null
+      ? (file.attributes as Record<string, unknown>)
+      : null;
+
+  const candidates = [
+    file.region,
+    file['region'],
+    metadata?.region,
+    attributes?.region
+  ];
+
+  for (const candidate of candidates) {
+    const region = normalizeStringValue(candidate);
+    if (region) return region;
+  }
+
+  return null;
+}
+
+export function resolveKiroService(file: AuthFileItem): string | null {
+  const metadata =
+    file && typeof file.metadata === 'object' && file.metadata !== null
+      ? (file.metadata as Record<string, unknown>)
+      : null;
+  const attributes =
+    file && typeof file.attributes === 'object' && file.attributes !== null
+      ? (file.attributes as Record<string, unknown>)
+      : null;
+
+  const candidates = [
+    file.service,
+    file['service'],
+    metadata?.service,
+    attributes?.service
+  ];
+
+  for (const candidate of candidates) {
+    const service = normalizeStringValue(candidate);
+    if (service) return service;
+  }
+
+  return null;
+}

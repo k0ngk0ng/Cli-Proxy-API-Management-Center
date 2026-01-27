@@ -145,3 +145,36 @@ export interface CodexQuotaState {
   error?: string;
   errorStatus?: number;
 }
+
+// Kiro API payload types
+export interface KiroUsageLimitItem {
+  resourceType?: string;
+  resource_type?: string;
+  limit?: number | string;
+  used?: number | string;
+  remaining?: number | string;
+  resetTime?: string;
+  reset_time?: string;
+}
+
+export interface KiroUsageLimitsPayload {
+  usageLimits?: KiroUsageLimitItem[];
+  usage_limits?: KiroUsageLimitItem[];
+}
+
+export interface KiroQuotaItem {
+  id: string;
+  label: string;
+  resourceType: string;
+  limit: number | null;
+  used: number | null;
+  remaining: number | null;
+  resetTime?: string;
+}
+
+export interface KiroQuotaState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  items: KiroQuotaItem[];
+  error?: string;
+  errorStatus?: number;
+}

@@ -42,6 +42,10 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
     light: { bg: '#f3e5f5', text: '#7b1fa2' },
     dark: { bg: '#4a148c', text: '#ce93d8' },
   },
+  kiro: {
+    light: { bg: '#e8f5e9', text: '#2e7d32' },
+    dark: { bg: '#1b5e20', text: '#81c784' },
+  },
   empty: {
     light: { bg: '#f5f5f5', text: '#616161' },
     dark: { bg: '#424242', text: '#bdbdbd' },
@@ -148,4 +152,20 @@ export const CODEX_REQUEST_HEADERS = {
   Authorization: 'Bearer $TOKEN$',
   'Content-Type': 'application/json',
   'User-Agent': 'codex_cli_rs/0.76.0 (Debian 13.0.0; x86_64) WindowsTerminal',
+};
+
+// Kiro API configuration
+export const KIRO_DEFAULT_REGION = 'us-east-1';
+export const KIRO_DEFAULT_SERVICE = 'q';
+
+export const buildKiroUsageLimitsUrl = (region: string, service: string): string => {
+  return `https://${service}.${region}.amazonaws.com/getUsageLimits?origin=AI_EDITOR&resourceType=AGENTIC_REQUEST`;
+};
+
+export const KIRO_REQUEST_HEADERS = {
+  Authorization: 'Bearer $TOKEN$',
+  'User-Agent': 'aws-sdk-js/1.0.0 ua/2.1 os/darwin lang/js md/nodejs api/codewhispererruntime#1.0.0 m/N,E',
+  'x-amz-user-agent': 'aws-sdk-js/1.0.0',
+  'amz-sdk-request': 'attempt=1; max=1',
+  Connection: 'close',
 };
