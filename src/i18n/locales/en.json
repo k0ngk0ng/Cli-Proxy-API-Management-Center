@@ -1048,6 +1048,26 @@
       "success": "Success",
       "failed": "Failed"
     },
+    "api": {
+      "title": "API Statistics",
+      "subtitle": "Grouped by API Key",
+      "click_hint": "Click row to expand model details",
+      "all_apis": "All APIs",
+      "all_models": "All Models",
+      "all_status": "All Status",
+      "only_success": "Success Only",
+      "only_failed": "Failed Only",
+      "header_key": "API Key",
+      "header_count": "Requests",
+      "header_rate": "Success Rate",
+      "header_tokens": "Tokens",
+      "header_recent": "Recent Status",
+      "header_time": "Last Request",
+      "model_details": "Model Details",
+      "model": "Model",
+      "success": "Success",
+      "failed": "Failed"
+    },
     "time": {
       "today": "Today",
       "last_n_days": "{{n}} Days",

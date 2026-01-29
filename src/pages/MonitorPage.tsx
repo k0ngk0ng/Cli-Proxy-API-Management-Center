@@ -26,6 +26,7 @@ import { DailyTrendChart } from '@/components/monitor/DailyTrendChart';
 import { HourlyModelChart } from '@/components/monitor/HourlyModelChart';
 import { HourlyTokenChart } from '@/components/monitor/HourlyTokenChart';
 import { SourceStats } from '@/components/monitor/ChannelStats';
+import { ApiStats } from '@/components/monitor/ApiStats';
 import { FailureAnalysis } from '@/components/monitor/FailureAnalysis';
 import { RequestLogs } from '@/components/monitor/RequestLogs';
 import styles from './MonitorPage.module.scss';
@@ -408,8 +409,11 @@ export function MonitorPage() {
       {/* 统计表格 */}
       <div className={styles.statsGrid}>
         <SourceStats data={filteredData} loading={loading} providerMap={providerMap} providerModels={providerModels} providerTypeMap={providerTypeMap} authIndexMap={authIndexMap} />
-        <FailureAnalysis data={filteredData} loading={loading} providerMap={providerMap} providerModels={providerModels} providerTypeMap={providerTypeMap} authIndexMap={authIndexMap} />
+        <ApiStats data={filteredData} loading={loading} />
       </div>
+
+      {/* 失败分析 */}
+      <FailureAnalysis data={filteredData} loading={loading} providerMap={providerMap} providerModels={providerModels} providerTypeMap={providerTypeMap} authIndexMap={authIndexMap} />
 
       {/* 请求日志 */}
       <RequestLogs
