@@ -1029,6 +1029,25 @@
       "success": "成功",
       "failed": "失败"
     },
+    "source": {
+      "title": "来源统计",
+      "subtitle": "按请求来源分类",
+      "click_hint": "单击行展开模型详情",
+      "all_sources": "全部来源",
+      "all_models": "全部模型",
+      "all_status": "全部状态",
+      "only_success": "仅成功",
+      "only_failed": "仅失败",
+      "header_name": "来源",
+      "header_count": "请求数",
+      "header_rate": "成功率",
+      "header_recent": "最近请求状态",
+      "header_time": "最近请求时间",
+      "model_details": "模型详情",
+      "model": "模型",
+      "success": "成功",
+      "failed": "失败"
+    },
     "time": {
       "today": "今天",
       "last_n_days": "{{n}} 天",

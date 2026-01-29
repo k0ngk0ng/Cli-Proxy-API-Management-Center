@@ -1029,6 +1029,25 @@
       "success": "Success",
       "failed": "Failed"
     },
+    "source": {
+      "title": "Source Statistics",
+      "subtitle": "Grouped by request source",
+      "click_hint": "Click row to expand model details",
+      "all_sources": "All Sources",
+      "all_models": "All Models",
+      "all_status": "All Status",
+      "only_success": "Success Only",
+      "only_failed": "Failed Only",
+      "header_name": "Source",
+      "header_count": "Requests",
+      "header_rate": "Success Rate",
+      "header_recent": "Recent Status",
+      "header_time": "Last Request",
+      "model_details": "Model Details",
+      "model": "Model",
+      "success": "Success",
+      "failed": "Failed"
+    },
     "time": {
       "today": "Today",
       "last_n_days": "{{n}} Days",

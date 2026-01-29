@@ -9,16 +9,19 @@ import {
   getRateClassName,
   filterDataByTimeRange,
   getProviderDisplayParts,
+  maskSecret,
   type DateRange,
 } from '@/utils/monitor';
 import type { UsageData } from '@/pages/MonitorPage';
 import styles from '@/pages/MonitorPage.module.scss';
 
-interface ChannelStatsProps {
+interface SourceStatsProps {
   data: UsageData | null;
   loading: boolean;
   providerMap: Record<string, string>;
   providerModels: Record<string, Set<string>>;
+  providerTypeMap: Record<string, string>;
+  authIndexMap: Record<string, { name: string; type: string; fileName: string }>;
 }
 
 interface ModelStat {
@@ -30,10 +33,11 @@ interface ModelStat {
   lastTimestamp: number;
 }
 
-interface ChannelStat {
+interface SourceStat {
   source: string;
   displayName: string;
   providerName: string | null;
+  providerType: string;
   maskedKey: string;
   totalRequests: number;
   successRequests: number;
@@ -44,10 +48,22 @@ interface ChannelStat {
   models: Record<string, ModelStat>;
 }
 
-export function ChannelStats({ data, loading, providerMap, providerModels }: ChannelStatsProps) {
+// 辅助函数：标准化 auth_index 值
+const normalizeAuthIndex = (value: unknown): string | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toString();
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  return null;
+};
+
+export function SourceStats({ data, loading, providerMap, providerModels, providerTypeMap, authIndexMap }: SourceStatsProps) {
   const { t } = useTranslation();
-  const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
-  const [filterChannel, setFilterChannel] = useState('');
+  const [expandedSource, setExpandedSource] = useState<string | null>(null);
+  const [filterSource, setFilterSource] = useState('');
   const [filterModel, setFilterModel] = useState('');
   const [filterStatus, setFilterStatus] = useState<'' | 'success' | 'failed'>('');
 
@@ -78,22 +94,41 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
     return filterDataByTimeRange(data, timeRange, customRange);
   }, [data, timeRange, customRange]);
 
-  // 计算渠道统计数据
-  const channelStats = useMemo(() => {
+  // 计算来源统计数据
+  const sourceStats = useMemo(() => {
     if (!timeFilteredData?.apis) return [];
 
-    const stats: Record<string, ChannelStat> = {};
+    const stats: Record<string, SourceStat> = {};
 
     Object.values(timeFilteredData.apis).forEach((apiData) => {
       Object.entries(apiData.models).forEach(([modelName, modelData]) => {
         modelData.details.forEach((detail) => {
           const source = detail.source || 'unknown';
-          // 获取渠道显示信息
-          const { provider, masked } = getProviderDisplayParts(source, providerMap);
-          // 只统计在 providerMap 中存在的渠道
-          if (!provider) return;
+          const authIndex = normalizeAuthIndex(detail.auth_index);
 
-          const displayName = `${provider} (${masked})`;
+          // 使用和 RequestLogs 一样的逻辑获取显示信息
+          let { provider, masked } = getProviderDisplayParts(source, providerMap);
+          let providerType = providerTypeMap[source] || '';
+
+          // 如果 providerMap 中没有找到，且有 auth_index，尝试通过 authIndexMap 获取
+          if (!provider && authIndex && authIndexMap[authIndex]) {
+            const authInfo = authIndexMap[authIndex];
+            provider = authInfo.name;
+            providerType = providerType || authInfo.type;
+            masked = authInfo.fileName || authInfo.name;
+          }
+
+          // 如果仍然没有 providerType，设置默认值
+          if (!providerType) {
+            providerType = '--';
+          }
+
+          // 如果没有 provider，使用脱敏后的 source 作为显示名
+          if (!provider) {
+            masked = maskSecret(source);
+          }
+
+          const displayName = provider ? `${provider} (${masked})` : masked;
           const timestamp = detail.timestamp ? new Date(detail.timestamp).getTime() : 0;
 
           if (!stats[displayName]) {
@@ -101,6 +136,7 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
               source,
               displayName,
               providerName: provider,
+              providerType,
               maskedKey: masked,
               totalRequests: 0,
               successRequests: 0,
@@ -174,38 +210,38 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
       .filter((stat) => stat.totalRequests > 0)
       .sort((a, b) => b.totalRequests - a.totalRequests)
       .slice(0, 10);
-  }, [timeFilteredData, providerMap]);
+  }, [timeFilteredData, providerMap, providerTypeMap, authIndexMap]);
 
-  // 获取所有渠道和模型列表
-  const { channels, models } = useMemo(() => {
-    const channelSet = new Set<string>();
+  // 获取所有来源和模型列表
+  const { sources, models } = useMemo(() => {
+    const sourceSet = new Set<string>();
     const modelSet = new Set<string>();
 
-    channelStats.forEach((stat) => {
-      channelSet.add(stat.displayName);
+    sourceStats.forEach((stat) => {
+      sourceSet.add(stat.displayName);
       Object.keys(stat.models).forEach((model) => modelSet.add(model));
     });
 
     return {
-      channels: Array.from(channelSet).sort(),
+      sources: Array.from(sourceSet).sort(),
       models: Array.from(modelSet).sort(),
     };
-  }, [channelStats]);
+  }, [sourceStats]);
 
   // 过滤后的数据
   const filteredStats = useMemo(() => {
-    return channelStats.filter((stat) => {
-      if (filterChannel && stat.displayName !== filterChannel) return false;
+    return sourceStats.filter((stat) => {
+      if (filterSource && stat.displayName !== filterSource) return false;
       if (filterModel && !stat.models[filterModel]) return false;
       if (filterStatus === 'success' && stat.failedRequests > 0) return false;
       if (filterStatus === 'failed' && stat.failedRequests === 0) return false;
       return true;
     });
-  }, [channelStats, filterChannel, filterModel, filterStatus]);
+  }, [sourceStats, filterSource, filterModel, filterStatus]);
 
   // 切换展开状态
   const toggleExpand = (displayName: string) => {
-    setExpandedChannel(expandedChannel === displayName ? null : displayName);
+    setExpandedSource(expandedSource === displayName ? null : displayName);
   };
 
   // 开始禁用流程（阻止事件冒泡）
@@ -217,11 +253,11 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
   return (
     <>
       <Card
-        title={t('monitor.channel.title')}
+        title={t('monitor.source.title')}
         subtitle={
           <span>
-            {formatTimeRangeCaption(timeRange, customRange, t)} · {t('monitor.channel.subtitle')}
-            <span style={{ color: 'var(--text-tertiary)' }}> · {t('monitor.channel.click_hint')}</span>
+            {formatTimeRangeCaption(timeRange, customRange, t)} · {t('monitor.source.subtitle')}
+            <span style={{ color: 'var(--text-tertiary)' }}> · {t('monitor.source.click_hint')}</span>
           </span>
         }
         extra={
@@ -236,12 +272,12 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
         <div className={styles.logFilters}>
           <select
             className={styles.logSelect}
-            value={filterChannel}
-            onChange={(e) => setFilterChannel(e.target.value)}
+            value={filterSource}
+            onChange={(e) => setFilterSource(e.target.value)}
           >
-            <option value="">{t('monitor.channel.all_channels')}</option>
-            {channels.map((channel) => (
-              <option key={channel} value={channel}>{channel}</option>
+            <option value="">{t('monitor.source.all_sources')}</option>
+            {sources.map((source) => (
+              <option key={source} value={source}>{source}</option>
             ))}
           </select>
           <select
@@ -249,7 +285,7 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
             value={filterModel}
             onChange={(e) => setFilterModel(e.target.value)}
           >
-            <option value="">{t('monitor.channel.all_models')}</option>
+            <option value="">{t('monitor.source.all_models')}</option>
             {models.map((model) => (
               <option key={model} value={model}>{model}</option>
             ))}
@@ -259,9 +295,9 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as '' | 'success' | 'failed')}
           >
-            <option value="">{t('monitor.channel.all_status')}</option>
-            <option value="success">{t('monitor.channel.only_success')}</option>
-            <option value="failed">{t('monitor.channel.only_failed')}</option>
+            <option value="">{t('monitor.source.all_status')}</option>
+            <option value="success">{t('monitor.source.only_success')}</option>
+            <option value="failed">{t('monitor.source.only_failed')}</option>
           </select>
         </div>
 
@@ -275,11 +311,11 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>{t('monitor.channel.header_name')}</th>
-                  <th>{t('monitor.channel.header_count')}</th>
-                  <th>{t('monitor.channel.header_rate')}</th>
-                  <th>{t('monitor.channel.header_recent')}</th>
-                  <th>{t('monitor.channel.header_time')}</th>
+                  <th>{t('monitor.source.header_name')}</th>
+                  <th>{t('monitor.source.header_count')}</th>
+                  <th>{t('monitor.source.header_rate')}</th>
+                  <th>{t('monitor.source.header_recent')}</th>
+                  <th>{t('monitor.source.header_time')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,19 +351,19 @@ export function ChannelStats({ data, loading, providerMap, providerModels }: Cha
                       </td>
                       <td>{formatTimestamp(stat.lastRequestTime)}</td>
                     </tr>
-                    {expandedChannel === stat.displayName && (
+                    {expandedSource === stat.displayName && (
                       <tr key={`${stat.displayName}-detail`}>
                         <td colSpan={5} className={styles.expandDetail}>
                           <div className={styles.expandTableWrapper}>
                           <table className={styles.table}>
                             <thead>
                               <tr>
-                                <th>{t('monitor.channel.model')}</th>
-                                <th>{t('monitor.channel.header_count')}</th>
-                                <th>{t('monitor.channel.header_rate')}</th>
-                                <th>{t('monitor.channel.success')}/{t('monitor.channel.failed')}</th>
-                                <th>{t('monitor.channel.header_recent')}</th>
-                                <th>{t('monitor.channel.header_time')}</th>
+                                <th>{t('monitor.source.model')}</th>
+                                <th>{t('monitor.source.header_count')}</th>
+                                <th>{t('monitor.source.header_rate')}</th>
+                                <th>{t('monitor.source.success')}/{t('monitor.source.failed')}</th>
+                                <th>{t('monitor.source.header_recent')}</th>
+                                <th>{t('monitor.source.header_time')}</th>
                                 <th>{t('monitor.logs.header_actions')}</th>
                               </tr>
                             </thead>

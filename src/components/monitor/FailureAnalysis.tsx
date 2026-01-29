@@ -9,6 +9,7 @@ import {
   getRateClassName,
   filterDataByTimeRange,
   getProviderDisplayParts,
+  maskSecret,
   type DateRange,
 } from '@/utils/monitor';
 import type { UsageData } from '@/pages/MonitorPage';
@@ -19,6 +20,8 @@ interface FailureAnalysisProps {
   loading: boolean;
   providerMap: Record<string, string>;
   providerModels: Record<string, Set<string>>;
+  providerTypeMap: Record<string, string>;
+  authIndexMap: Record<string, { name: string; type: string; fileName: string }>;
 }
 
 interface ModelFailureStat {
@@ -34,16 +37,29 @@ interface FailureStat {
   source: string;
   displayName: string;
   providerName: string | null;
+  providerType: string;
   maskedKey: string;
   failedCount: number;
   lastFailTime: number;
   models: Record<string, ModelFailureStat>;
 }
 
-export function FailureAnalysis({ data, loading, providerMap, providerModels }: FailureAnalysisProps) {
+// 辅助函数：标准化 auth_index 值
+const normalizeAuthIndex = (value: unknown): string | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toString();
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  return null;
+};
+
+export function FailureAnalysis({ data, loading, providerMap, providerModels, providerTypeMap, authIndexMap }: FailureAnalysisProps) {
   const { t } = useTranslation();
-  const [expandedChannel, setExpandedChannel] = useState<string | null>(null);
-  const [filterChannel, setFilterChannel] = useState('');
+  const [expandedSource, setExpandedSource] = useState<string | null>(null);
+  const [filterSource, setFilterSource] = useState('');
   const [filterModel, setFilterModel] = useState('');
 
   // 时间范围状态
@@ -77,33 +93,53 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
   const failureStats = useMemo(() => {
     if (!timeFilteredData?.apis) return [];
 
-    // 首先收集有失败记录的渠道
+    // 首先收集有失败记录的来源
     const failedSources = new Set<string>();
     Object.values(timeFilteredData.apis).forEach((apiData) => {
       Object.values(apiData.models).forEach((modelData) => {
         modelData.details.forEach((detail) => {
           if (detail.failed) {
             const source = detail.source || 'unknown';
-            const { provider } = getProviderDisplayParts(source, providerMap);
-            if (provider) {
-              failedSources.add(source);
-            }
+            failedSources.add(source);
           }
         });
       });
     });
 
-    // 统计这些渠道的所有请求
+    // 统计这些来源的所有请求
     const stats: Record<string, FailureStat> = {};
 
     Object.values(timeFilteredData.apis).forEach((apiData) => {
       Object.entries(apiData.models).forEach(([modelName, modelData]) => {
         modelData.details.forEach((detail) => {
           const source = detail.source || 'unknown';
-          // 只统计有失败记录的渠道
+          // 只统计有失败记录的来源
           if (!failedSources.has(source)) return;
 
-          const { provider, masked } = getProviderDisplayParts(source, providerMap);
+          const authIndex = normalizeAuthIndex(detail.auth_index);
+
+          // 使用和 RequestLogs 一样的逻辑获取显示信息
+          let { provider, masked } = getProviderDisplayParts(source, providerMap);
+          let providerType = providerTypeMap[source] || '';
+
+          // 如果 providerMap 中没有找到，且有 auth_index，尝试通过 authIndexMap 获取
+          if (!provider && authIndex && authIndexMap[authIndex]) {
+            const authInfo = authIndexMap[authIndex];
+            provider = authInfo.name;
+            providerType = providerType || authInfo.type;
+            masked = authInfo.fileName || authInfo.name;
+          }
+
+          // 如果仍然没有 providerType，设置默认值
+          if (!providerType) {
+            providerType = '--';
+          }
+
+          // 如果没有 provider，使用脱敏后的 source 作为显示名
+          if (!provider) {
+            masked = maskSecret(source);
+          }
+
           const displayName = provider ? `${provider} (${masked})` : masked;
           const timestamp = detail.timestamp ? new Date(detail.timestamp).getTime() : 0;
 
@@ -112,6 +148,7 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
               source,
               displayName,
               providerName: provider,
+              providerType,
               maskedKey: masked,
               failedCount: 0,
               lastFailTime: 0,
@@ -166,20 +203,20 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
       .filter((stat) => stat.failedCount > 0)
       .sort((a, b) => b.failedCount - a.failedCount)
       .slice(0, 10);
-  }, [timeFilteredData, providerMap]);
+  }, [timeFilteredData, providerMap, providerTypeMap, authIndexMap]);
 
-  // 获取所有渠道和模型列表
-  const { channels, models } = useMemo(() => {
-    const channelSet = new Set<string>();
+  // 获取所有来源和模型列表
+  const { sources, models } = useMemo(() => {
+    const sourceSet = new Set<string>();
     const modelSet = new Set<string>();
 
     failureStats.forEach((stat) => {
-      channelSet.add(stat.displayName);
+      sourceSet.add(stat.displayName);
       Object.keys(stat.models).forEach((model) => modelSet.add(model));
     });
 
     return {
-      channels: Array.from(channelSet).sort(),
+      sources: Array.from(sourceSet).sort(),
       models: Array.from(modelSet).sort(),
     };
   }, [failureStats]);
@@ -187,15 +224,15 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
   // 过滤后的数据
   const filteredStats = useMemo(() => {
     return failureStats.filter((stat) => {
-      if (filterChannel && stat.displayName !== filterChannel) return false;
+      if (filterSource && stat.displayName !== filterSource) return false;
       if (filterModel && !stat.models[filterModel]) return false;
       return true;
     });
-  }, [failureStats, filterChannel, filterModel]);
+  }, [failureStats, filterSource, filterModel]);
 
   // 切换展开状态
   const toggleExpand = (displayName: string) => {
-    setExpandedChannel(expandedChannel === displayName ? null : displayName);
+    setExpandedSource(expandedSource === displayName ? null : displayName);
   };
 
   // 获取主要失败模型（前2个，已禁用的排在后面）
@@ -243,12 +280,12 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
         <div className={styles.logFilters}>
           <select
             className={styles.logSelect}
-            value={filterChannel}
-            onChange={(e) => setFilterChannel(e.target.value)}
+            value={filterSource}
+            onChange={(e) => setFilterSource(e.target.value)}
           >
-            <option value="">{t('monitor.channel.all_channels')}</option>
-            {channels.map((channel) => (
-              <option key={channel} value={channel}>{channel}</option>
+            <option value="">{t('monitor.source.all_sources')}</option>
+            {sources.map((source) => (
+              <option key={source} value={source}>{source}</option>
             ))}
           </select>
           <select
@@ -256,7 +293,7 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
             value={filterModel}
             onChange={(e) => setFilterModel(e.target.value)}
           >
-            <option value="">{t('monitor.channel.all_models')}</option>
+            <option value="">{t('monitor.source.all_models')}</option>
             {models.map((model) => (
               <option key={model} value={model}>{model}</option>
             ))}
@@ -324,19 +361,19 @@ export function FailureAnalysis({ data, loading, providerMap, providerModels }: 
                           )}
                         </td>
                       </tr>
-                      {expandedChannel === stat.displayName && (
+                      {expandedSource === stat.displayName && (
                         <tr key={`${stat.displayName}-detail`}>
                           <td colSpan={4} className={styles.expandDetail}>
                             <div className={styles.expandTableWrapper}>
                             <table className={styles.table}>
                               <thead>
                                 <tr>
-                                  <th>{t('monitor.channel.model')}</th>
-                                  <th>{t('monitor.channel.header_count')}</th>
-                                  <th>{t('monitor.channel.header_rate')}</th>
-                                  <th>{t('monitor.channel.success')}/{t('monitor.channel.failed')}</th>
-                                  <th>{t('monitor.channel.header_recent')}</th>
-                                  <th>{t('monitor.channel.header_time')}</th>
+                                  <th>{t('monitor.source.model')}</th>
+                                  <th>{t('monitor.source.header_count')}</th>
+                                  <th>{t('monitor.source.header_rate')}</th>
+                                  <th>{t('monitor.source.success')}/{t('monitor.source.failed')}</th>
+                                  <th>{t('monitor.source.header_recent')}</th>
+                                  <th>{t('monitor.source.header_time')}</th>
                                   <th>{t('monitor.logs.header_actions')}</th>
                                 </tr>
                               </thead>
