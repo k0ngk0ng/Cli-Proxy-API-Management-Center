@@ -1107,3 +1107,97 @@
     opacity: 0.9;
   }
 }
+
+// API Key 别名管理
+.aliasManager {
+  padding: 8px 0;
+}
+
+.aliasList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aliasItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border-radius: $radius-md;
+  flex-wrap: wrap;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+.aliasKeyInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+
+  @include mobile {
+    width: 100%;
+  }
+}
+
+.aliasKey {
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 4px 8px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--border-color);
+}
+
+.aliasValue {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.aliasActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+
+  @include mobile {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.aliasInput {
+  padding: 6px 10px;
+  border-radius: $radius-md;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  min-width: 120px;
+
+  @include mobile {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  }
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+}
+

@@ -1088,6 +1088,13 @@
       "header_models": "Top Failed Models",
       "all_failed_models": "All Failed Models"
     },
+    "alias": {
+      "title": "API Key Aliases",
+      "subtitle": "Set aliases for API Keys (stored locally)",
+      "empty": "No API Keys found",
+      "placeholder": "Enter alias",
+      "set": "Set Alias"
+    },
     "logs": {
       "title": "Request Logs",
       "total_count": "{{count}} records",

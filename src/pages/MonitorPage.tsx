@@ -29,6 +29,7 @@ import { SourceStats } from '@/components/monitor/ChannelStats';
 import { ApiStats } from '@/components/monitor/ApiStats';
 import { FailureAnalysis } from '@/components/monitor/FailureAnalysis';
 import { RequestLogs } from '@/components/monitor/RequestLogs';
+import { ApiKeyAliasManager } from '@/components/monitor/ApiKeyAliasManager';
 import styles from './MonitorPage.module.scss';
 
 // 注册 Chart.js 组件
@@ -323,6 +324,12 @@ export function MonitorPage() {
     return filtered;
   }, [usageData, timeRange, apiFilter]);
 
+  // 收集所有 API Keys
+  const allApiKeys = useMemo(() => {
+    if (!usageData?.apis) return [];
+    return Object.keys(usageData.apis).sort();
+  }, [usageData]);
+
   // 处理时间范围变化
   const handleTimeRangeChange = (range: TimeRange) => {
     setTimeRange(range);
@@ -424,6 +431,9 @@ export function MonitorPage() {
         authIndexMap={authIndexMap}
         apiFilter={apiFilter}
       />
+
+      {/* API Key 别名管理 */}
+      <ApiKeyAliasManager apiKeys={allApiKeys} />
     </div>
   );
 }

@@ -7,3 +7,4 @@ export { SourceStats } from './ChannelStats';
 export { ApiStats } from './ApiStats';
 export { FailureAnalysis } from './FailureAnalysis';
 export { RequestLogs } from './RequestLogs';
+export { ApiKeyAliasManager } from './ApiKeyAliasManager';

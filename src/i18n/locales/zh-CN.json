@@ -1088,6 +1088,13 @@
       "header_models": "主要失败模型",
       "all_failed_models": "所有失败模型"
     },
+    "alias": {
+      "title": "API Key 别名",
+      "subtitle": "为 API Key 设置别名（本地存储）",
+      "empty": "暂无 API Key",
+      "placeholder": "输入别名",
+      "set": "设置别名"
+    },
     "logs": {
       "title": "请求日志",
       "total_count": "共 {{count}} 条",

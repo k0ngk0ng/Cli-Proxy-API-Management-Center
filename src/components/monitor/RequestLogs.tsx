@@ -4,6 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card } from '@/components/ui/Card';
 import { usageApi } from '@/services/api';
 import { useDisableModel } from '@/hooks';
+import { useApiKeyAliasStore } from '@/stores';
 import { TimeRangeSelector, formatTimeRangeCaption, type TimeRange } from './TimeRangeSelector';
 import { DisableModelModal } from './DisableModelModal';
 import { UnsupportedDisableModal } from './UnsupportedDisableModal';
@@ -104,6 +105,9 @@ export function RequestLogs({ data, loading: parentLoading, providerMap, provide
     handleCancelDisable,
     handleCloseUnsupported,
   } = useDisableModel({ providerMap, providerTypeMap });
+
+  // API Key 别名
+  const apiKeyAliases = useApiKeyAliasStore((state) => state.aliases);
 
   // 处理时间范围变化
   const handleTimeRangeChange = useCallback((range: TimeRange, custom?: DateRange) => {
@@ -440,11 +444,19 @@ export function RequestLogs({ data, loading: parentLoading, providerMap, provide
     const stats = getStats(entry);
     const rateValue = parseFloat(stats.successRate);
     const disabled = isModelDisabled(entry.source, entry.model);
+    const apiKeyAlias = apiKeyAliases[entry.apiKey];
 
     return (
       <>
         <td title={entry.apiKey}>
-          {maskSecret(entry.apiKey)}
+          {apiKeyAlias ? (
+            <>
+              <span className={styles.channelName}>{apiKeyAlias}</span>
+              <span className={styles.channelSecret}> ({maskSecret(entry.apiKey)})</span>
+            </>
+          ) : (
+            maskSecret(entry.apiKey)
+          )}
         </td>
         <td>{entry.providerType}</td>
         <td title={entry.model}>

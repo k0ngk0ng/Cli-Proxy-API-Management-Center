@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
+import { useApiKeyAliasStore } from '@/stores';
 import { TimeRangeSelector, formatTimeRangeCaption, type TimeRange } from './TimeRangeSelector';
 import {
   formatTimestamp,
@@ -54,6 +55,9 @@ export function ApiStats({ data, loading }: ApiStatsProps) {
   // 时间范围状态
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
+  // API Key 别名
+  const apiKeyAliases = useApiKeyAliasStore((state) => state.aliases);
 
   // 处理时间范围变化
   const handleTimeRangeChange = useCallback((range: TimeRange, custom?: DateRange) => {
@@ -297,7 +301,14 @@ export function ApiStats({ data, loading }: ApiStatsProps) {
                     onClick={() => toggleExpand(stat.apiKey)}
                   >
                     <td>
-                      <span className={styles.channelSecret}>{stat.maskedKey}</span>
+                      {apiKeyAliases[stat.apiKey] ? (
+                        <>
+                          <span className={styles.channelName}>{apiKeyAliases[stat.apiKey]}</span>
+                          <span className={styles.channelSecret}> ({stat.maskedKey})</span>
+                        </>
+                      ) : (
+                        <span className={styles.channelSecret}>{stat.maskedKey}</span>
+                      )}
                     </td>
                     <td>{stat.totalRequests.toLocaleString()}</td>
                     <td className={getRateClassName(stat.successRate, styles)}>
