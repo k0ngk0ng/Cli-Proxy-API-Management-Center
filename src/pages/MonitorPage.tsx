@@ -373,7 +373,7 @@ export function MonitorPage() {
                 className={`${styles.timeButton} ${timeRange === range ? styles.active : ''}`}
                 onClick={() => handleTimeRangeChange(range)}
               >
-                {range === 1 ? t('monitor.today') : t('monitor.last_n_days', { n: range })}
+                {t(range === 1 ? 'monitor.last_n_days' : 'monitor.last_n_days_plural', { n: range })}
               </button>
             ))}
           </div>

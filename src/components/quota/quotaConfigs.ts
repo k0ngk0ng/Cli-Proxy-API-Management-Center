@@ -725,12 +725,16 @@ const renderKiroItems = (
     }
 
     const percentLabel = percent === null ? '--' : `${percent}%`;
+    const remainingValue = remaining ?? (limit !== null ? limit - (used ?? 0) : null);
+    const remainingFormatted = remainingValue !== null
+      ? (Number.isInteger(remainingValue) ? remainingValue : remainingValue.toFixed(2))
+      : 0;
     const usageLabel =
       limit !== null
         ? t('kiro_quota.usage_info', {
             used: used ?? 0,
             limit,
-            remaining: remaining ?? (limit - (used ?? 0))
+            remaining: remainingFormatted
           })
         : null;
     const resetLabel = formatQuotaResetTime(item.resetTime);

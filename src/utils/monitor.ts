@@ -229,7 +229,6 @@ export function filterDataByTimeRange(
     cutoffEnd = customRange.end;
   } else if (typeof timeRange === 'number') {
     cutoffStart = new Date(now.getTime() - timeRange * 24 * 60 * 60 * 1000);
-    cutoffStart.setHours(0, 0, 0, 0);
   } else {
     cutoffStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     cutoffStart.setHours(0, 0, 0, 0);

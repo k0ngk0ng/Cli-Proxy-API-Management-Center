@@ -584,6 +584,15 @@ export function RequestLogs({ data, loading: parentLoading, providerMap, provide
             {getCountdownText()}
           </span>
 
+          <button
+            className={styles.refreshBtn}
+            onClick={fetchLogData}
+            disabled={logLoading}
+            title={t('common.refresh')}
+          >
+            {t('common.refresh')}
+          </button>
+
           <select
             className={styles.logSelect}
             value={autoRefresh}

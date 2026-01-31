@@ -65,11 +65,9 @@ export function TimeRangeSelector({ value, onChange, customRange }: TimeRangeSel
             className={`${styles.timeButton} ${value === range ? styles.active : ''}`}
             onClick={() => handleTimeClick(range)}
           >
-            {range === 1
-              ? t('monitor.time.today')
-              : range === 'custom'
+            {range === 'custom'
               ? t('monitor.time.custom')
-              : t('monitor.time.last_n_days', { n: range })}
+              : t(range === 1 ? 'monitor.time.last_n_days' : 'monitor.time.last_n_days_plural', { n: range })}
           </button>
         ))}
       </div>
@@ -120,7 +118,6 @@ export function filterByTimeRange<T extends { timestamp?: string }>(
     cutoffEnd = customRange.end;
   } else if (typeof range === 'number') {
     cutoffStart = new Date(now.getTime() - range * 24 * 60 * 60 * 1000);
-    cutoffStart.setHours(0, 0, 0, 0);
   } else {
     // 默认7天
     cutoffStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -145,10 +142,10 @@ export function formatTimeRangeCaption(
     const endStr = formatDateForDisplay(customRange.end);
     return `${startStr} - ${endStr}`;
   }
-  if (range === 1) {
-    return t ? t('monitor.time.today') : '今天';
+  if (t) {
+    return t(range === 1 ? 'monitor.time.last_n_days' : 'monitor.time.last_n_days_plural', { n: range });
   }
-  return t ? t('monitor.time.last_n_days', { n: range }) : `最近 ${range} 天`;
+  return `最近 ${range} 天`;
 }
 
 function formatDateForDisplay(date: Date): string {

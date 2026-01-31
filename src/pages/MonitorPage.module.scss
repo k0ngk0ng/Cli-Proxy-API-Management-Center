@@ -857,6 +857,33 @@
   }
 }
 
+.refreshBtn {
+  padding: 6px 12px;
+  border-radius: $radius-md;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  @include mobile {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    background: var(--bg-tertiary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 // 分页
 .pagination {
   display: flex;
