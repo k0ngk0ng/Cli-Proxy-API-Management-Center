@@ -679,7 +679,7 @@ export function AiProvidersPage() {
           </div>
         )}
 
-        {filteredGeminiKeys.length > 0 && (
+        {(filteredGeminiKeys.length > 0 || !normalizedQuery) && (
           <GeminiSection
             configs={filteredGeminiKeys.map(({ item }) => item)}
             keyStats={keyStats}
@@ -705,7 +705,7 @@ export function AiProvidersPage() {
           />
         )}
 
-        {filteredCodexConfigs.length > 0 && (
+        {(filteredCodexConfigs.length > 0 || !normalizedQuery) && (
           <CodexSection
             configs={filteredCodexConfigs.map(({ item }) => item)}
             keyStats={keyStats}
@@ -734,7 +734,7 @@ export function AiProvidersPage() {
           />
         )}
 
-        {filteredClaudeConfigs.length > 0 && (
+        {(filteredClaudeConfigs.length > 0 || !normalizedQuery) && (
           <ClaudeSection
             configs={filteredClaudeConfigs.map(({ item }) => item)}
             keyStats={keyStats}
@@ -762,7 +762,7 @@ export function AiProvidersPage() {
           />
         )}
 
-        {filteredVertexConfigs.length > 0 && (
+        {(filteredVertexConfigs.length > 0 || !normalizedQuery) && (
           <VertexSection
             configs={filteredVertexConfigs.map(({ item }) => item)}
             keyStats={keyStats}
@@ -800,7 +800,7 @@ export function AiProvidersPage() {
           />
         )}
 
-        {filteredOpenaiProviders.length > 0 && (
+        {(filteredOpenaiProviders.length > 0 || !normalizedQuery) && (
           <OpenAISection
             configs={filteredOpenaiProviders.map(({ item }) => item)}
             keyStats={keyStats}
